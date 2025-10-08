@@ -1,0 +1,58 @@
+[
+  {
+    "intent": "greeting",
+    "utterances": ["hi", "hello", "hey there", "good morning", "good evening"],
+    "response": {
+      "text": "Hi there! I'm your Customer Care Assistant. I can help with billing, account access, live events, and device setup. What can I assist you with today?",
+      "suggestions": ["Billing question", "Trouble logging in", "How to watch live events"]
+    }
+  },
+  {
+    "intent": "billing",
+    "utterances": ["billing issue", "charge on my account", "incorrect bill", "payment failed", "update my card"],
+    "response": {
+      "text": "It sounds like you have a billing question. Here's what I can do:\n1. Check your subscription status.\n2. Update payment details.\n3. Review recent charges.\nIf you'd like to speak with a specialist, I can collect a few details and start a ticket.",
+      "form": {
+        "title": "Billing support",
+        "fields": [
+          {"name": "full_name", "label": "Full name", "type": "text", "required": true},
+          {"name": "email", "label": "Email address", "type": "email", "required": true},
+          {"name": "billing_issue", "label": "Tell us about the billing issue", "type": "textarea", "required": true}
+        ]
+      },
+      "suggestions": ["Review subscription status", "Update payment method", "Talk to an agent"]
+    }
+  },
+  {
+    "intent": "login_help",
+    "utterances": ["can't log in", "forgot password", "trouble signing in", "login help", "reset password"],
+    "response": {
+      "text": "Let's get you back into your account. Try these steps:\n• Make sure you're using the email connected to your subscription.\n• If you forgot your password, use the **Reset Password** option on the sign-in page.\n• Still locked out? I can trigger a password reset email for you.",
+      "suggestions": ["Send me a reset email", "Still can't sign in", "Something else"]
+    }
+  },
+  {
+    "intent": "live_event",
+    "utterances": ["watch live event", "devices for live events", "streaming live game", "best device for matches", "live event schedule"],
+    "response": {
+      "text": "We stream live events on web, iOS, Android, Roku, Apple TV, Amazon Fire TV, and Android TV. For the best experience, use a wired connection and close other streaming apps. Need the upcoming schedule?",
+      "suggestions": ["Show live event schedule", "Recommended devices", "Talk to an agent"]
+    }
+  },
+  {
+    "intent": "goodbye",
+    "utterances": ["thank you", "thanks", "bye", "goodbye", "appreciate it"],
+    "response": {
+      "text": "Happy to help! If anything else comes up, just let me know. Have a great day!",
+      "suggestions": ["Start over", "No, that's all"]
+    }
+  },
+  {
+    "intent": "fallback",
+    "utterances": [],
+    "response": {
+      "text": "I'm not sure I have that answer yet. Could you rephrase your question or pick one of the options below? If you'd prefer, I can connect you with a human specialist.",
+      "suggestions": ["Billing question", "Trouble logging in", "Talk to an agent"]
+    }
+  }
+]
