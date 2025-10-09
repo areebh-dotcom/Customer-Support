@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Customer Support Assistant</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg-color: #f4f6fb;
+        --card-color: #ffffff;
+        --border-color: #d8deed;
+        --primary: #2f54eb;
+        --primary-dark: #1d39c4;
+        --text-color: #1f2933;
+        --assistant-bg: #eef2ff;
+        --user-bg: #d1f7c4;
+        font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #dee5ff, #f4f6fb);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .app-shell {
+        width: min(100%, 960px);
+        height: min(90vh, 720px);
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        box-sizing: border-box;
+      }
+
+      @media (max-width: 900px) {
+        .app-shell {
+          grid-template-columns: 1fr;
+          height: auto;
+        }
+      }
+
+      .card {
+        background: var(--card-color);
+        border-radius: 20px;
+        box-shadow: 0 18px 35px rgba(31, 45, 61, 0.15);
+        border: 1px solid rgba(47, 84, 235, 0.08);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .sidebar {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .sidebar h1 {
+        font-size: 1.5rem;
+        margin: 0;
+        color: var(--primary);
+      }
+
+      .sidebar p {
+        margin: 0;
+        color: #475569;
+        line-height: 1.5;
+      }
+
+      .quick-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .quick-actions button {
+        border: none;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        background: rgba(47, 84, 235, 0.08);
+        color: var(--primary);
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.2s ease;
+      }
+
+      .quick-actions button:hover,
+      .quick-actions button:focus {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 20px rgba(47, 84, 235, 0.2);
+        outline: none;
+      }
+
+      .transcript {
+        flex: 1 1 auto;
+        padding: 1.5rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        background: radial-gradient(circle at top left, rgba(47, 84, 235, 0.15), transparent 60%);
+      }
+
+      .message {
+        max-width: 75%;
+        padding: 1rem 1.25rem;
+        border-radius: 18px;
+        line-height: 1.5;
+        box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+        position: relative;
+      }
+
+      .message.user {
+        margin-left: auto;
+        background: var(--user-bg);
+        color: #0f172a;
+      }
+
+      .message.assistant {
+        background: var(--assistant-bg);
+      }
+
+      .message.assistant::before {
+        content: "\2728";
+        position: absolute;
+        top: -12px;
+        left: -12px;
+        font-size: 1.25rem;
+      }
+
+      .message .intent-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        background: rgba(47, 84, 235, 0.12);
+        color: var(--primary-dark);
+        margin-bottom: 0.4rem;
+      }
+
+      .suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.85rem;
+      }
+
+      .suggestions button {
+        padding: 0.5rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid var(--border-color);
+        background: #fff;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      .suggestions button:hover,
+      .suggestions button:focus {
+        background: rgba(47, 84, 235, 0.1);
+        outline: none;
+      }
+
+      .composer {
+        border-top: 1px solid rgba(148, 163, 184, 0.2);
+        padding: 1rem 1.5rem 1.5rem;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+        background: var(--card-color);
+      }
+
+      .composer textarea {
+        flex: 1 1 auto;
+        resize: none;
+        min-height: 60px;
+        max-height: 160px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        font-family: inherit;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .composer textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(47, 84, 235, 0.15);
+        outline: none;
+      }
+
+      .composer button {
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 0.85rem 1.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.15s ease;
+      }
+
+      .composer button:hover,
+      .composer button:focus {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+        outline: none;
+      }
+
+      form.intent-form {
+        margin-top: 1rem;
+        padding: 1rem;
+        border: 1px dashed rgba(47, 84, 235, 0.3);
+        border-radius: 12px;
+        background: rgba(47, 84, 235, 0.06);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      form.intent-form h3 {
+        margin: 0;
+        font-size: 1rem;
+        color: var(--primary-dark);
+      }
+
+      form.intent-form label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      form.intent-form input,
+      form.intent-form textarea {
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        padding: 0.6rem 0.75rem;
+        font-family: inherit;
+      }
+
+      form.intent-form button {
+        align-self: flex-start;
+        padding: 0.6rem 1.2rem;
+        border-radius: 999px;
+        border: none;
+        background: var(--primary);
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .status {
+        font-size: 0.85rem;
+        color: #475569;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <section class="card sidebar">
+        <div>
+          <h1>Customer Care Assistant</h1>
+          <p>
+            Get instant help for billing, account access, live events, and more. Use the
+            quick actions or type your question to start a conversation.
+          </p>
+        </div>
+        <div class="status" id="connection-status">Ready to help.</div>
+        <div class="quick-actions" id="quick-actions"></div>
+        <div class="status">
+          Tip: Forms submitted here are shared with human specialists when escalation is needed.
+        </div>
+      </section>
+      <section class="card" aria-live="polite">
+        <div class="transcript" id="transcript"></div>
+        <div class="composer">
+          <textarea
+            id="message-input"
+            placeholder="Ask me anything about your subscription..."
+            rows="2"
+            aria-label="Type your message"
+          ></textarea>
+          <button id="send-button" type="button">Send</button>
+        </div>
+      </section>
+    </div>
+
+    <template id="message-template">
+      <div class="message">
+        <div class="content"></div>
+      </div>
+    </template>
+
+    <script>
+      const transcript = document.getElementById("transcript");
+      const messageInput = document.getElementById("message-input");
+      const sendButton = document.getElementById("send-button");
+      const quickActionsContainer = document.getElementById("quick-actions");
+      const statusLabel = document.getElementById("connection-status");
+
+      const sessionId = (() => {
+        if (crypto.randomUUID) {
+          return crypto.randomUUID();
+        }
+        return "web-" + Math.random().toString(36).slice(2);
+      })();
+
+      let isSending = false;
+
+      function createMessageElement(role, text, intent = null) {
+        const template = document.getElementById("message-template");
+        const element = template.content.firstElementChild.cloneNode(true);
+        element.classList.add(role);
+        const content = element.querySelector(".content");
+
+        if (role === "assistant" && intent) {
+          const chip = document.createElement("span");
+          chip.className = "intent-tag";
+          chip.textContent = intent.replace(/_/g, " ");
+          content.appendChild(chip);
+        }
+
+        const paragraphs = text.split(/\n+/);
+        paragraphs.forEach((paragraph) => {
+          const p = document.createElement("p");
+          p.textContent = paragraph;
+          content.appendChild(p);
+        });
+        return element;
+      }
+
+      function appendMessage(role, text, intent) {
+        const message = createMessageElement(role, text, intent);
+        transcript.appendChild(message);
+        transcript.scrollTop = transcript.scrollHeight;
+      }
+
+      function renderSuggestions(suggestions) {
+        quickActionsContainer.innerHTML = "";
+        if (!suggestions || suggestions.length === 0) {
+          return;
+        }
+        suggestions.forEach((suggestion) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = suggestion;
+          btn.addEventListener("click", () => sendMessage(suggestion));
+          quickActionsContainer.appendChild(btn);
+        });
+      }
+
+      function renderForm(formPayload) {
+        const existing = document.querySelector("form.intent-form");
+        if (existing) {
+          existing.remove();
+        }
+        if (!formPayload) {
+          return;
+        }
+
+        const form = document.createElement("form");
+        form.className = "intent-form";
+        form.dataset.intent = formPayload.title || "Form";
+
+        const heading = document.createElement("h3");
+        heading.textContent = formPayload.title || "Provide details";
+        form.appendChild(heading);
+
+        formPayload.fields.forEach((field) => {
+          const wrapper = document.createElement("div");
+
+          const label = document.createElement("label");
+          label.textContent = field.label || field.name;
+          label.setAttribute("for", field.name);
+          wrapper.appendChild(label);
+
+          let input;
+          if (field.type === "textarea") {
+            input = document.createElement("textarea");
+            input.rows = 3;
+          } else {
+            input = document.createElement("input");
+            input.type = field.type || "text";
+          }
+          input.id = field.name;
+          input.name = field.name;
+          if (field.required) {
+            input.required = true;
+          }
+          wrapper.appendChild(input);
+          form.appendChild(wrapper);
+        });
+
+        const submit = document.createElement("button");
+        submit.type = "submit";
+        submit.textContent = "Submit details";
+        form.appendChild(submit);
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const formData = new FormData(form);
+          const summary = Array.from(formData.entries())
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("; ");
+          appendMessage("user", summary);
+          form.remove();
+          await sendMessage(`Here are my details -> ${summary}`);
+        });
+
+        transcript.appendChild(form);
+        transcript.scrollTop = transcript.scrollHeight;
+      }
+
+      async function sendMessage(text) {
+        if (!text || !text.trim() || isSending) {
+          return;
+        }
+        const message = text.trim();
+        appendMessage("user", message);
+        messageInput.value = "";
+        renderSuggestions([]);
+        isSending = true;
+        statusLabel.textContent = "Thinking...";
+        statusLabel.classList.remove("hidden");
+
+        try {
+          const response = await fetch("/chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ session_id: sessionId, message }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Request failed: ${response.status}`);
+          }
+
+          const payload = await response.json();
+          appendMessage("assistant", payload.response.text, payload.intent);
+          renderSuggestions(payload.response.suggestions);
+          renderForm(payload.response.form);
+          statusLabel.textContent = `Intent: ${payload.intent} (confidence ${payload.confidence.toFixed(2)})`;
+        } catch (error) {
+          appendMessage(
+            "assistant",
+            "I couldn't reach the support service just now. Please try again or refresh the page.",
+            "system_error"
+          );
+          statusLabel.textContent = "Connection issue – retry in a moment.";
+          console.error(error);
+        } finally {
+          isSending = false;
+        }
+      }
+
+      sendButton.addEventListener("click", () => sendMessage(messageInput.value));
+      messageInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendMessage(messageInput.value);
+        }
+      });
+
+      // Kick off greeting
+      appendMessage(
+        "assistant",
+        "Hi there! I'm your Customer Care Assistant. Ask me about billing, live events, or account access to get started.",
+        "greeting"
+      );
+      renderSuggestions([
+        "Billing question",
+        "Trouble logging in",
+        "How to watch live events",
+      ]);
+    </script>
+  </body>
+</html>
