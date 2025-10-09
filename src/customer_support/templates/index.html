@@ -146,6 +146,14 @@
         background: rgba(47, 84, 235, 0.12);
         color: var(--primary-dark);
         margin-bottom: 0.4rem;
+        text-transform: capitalize;
+      }
+
+      .message .timestamp {
+        display: block;
+        margin-top: 0.6rem;
+        font-size: 0.75rem;
+        color: #64748b;
       }
 
       .suggestions {
@@ -267,6 +275,47 @@
       .hidden {
         display: none !important;
       }
+
+      .typing-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(47, 84, 235, 0.15);
+        color: var(--primary-dark);
+        font-size: 0.85rem;
+      }
+
+      .typing-indicator span {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        animation: bounce 0.9s infinite ease-in-out;
+      }
+
+      .typing-indicator span:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+
+      .typing-indicator span:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      @keyframes bounce {
+        0%,
+        80%,
+        100% {
+          transform: translateY(0);
+          opacity: 0.4;
+        }
+        40% {
+          transform: translateY(-4px);
+          opacity: 1;
+        }
+      }
     </style>
   </head>
   <body>
@@ -279,7 +328,7 @@
             quick actions or type your question to start a conversation.
           </p>
         </div>
-        <div class="status" id="connection-status">Ready to help.</div>
+        <div class="status" id="connection-status">Loading assistant...</div>
         <div class="quick-actions" id="quick-actions"></div>
         <div class="status">
           Tip: Forms submitted here are shared with human specialists when escalation is needed.
@@ -320,8 +369,16 @@
       })();
 
       let isSending = false;
+      let typingIndicator = null;
 
-      function createMessageElement(role, text, intent = null) {
+      function formatTimestamp(date) {
+        return new Intl.DateTimeFormat(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(date);
+      }
+
+      function createMessageElement(role, text, intent = null, timestamp = null) {
         const template = document.getElementById("message-template");
         const element = template.content.firstElementChild.cloneNode(true);
         element.classList.add(role);
@@ -340,13 +397,23 @@
           p.textContent = paragraph;
           content.appendChild(p);
         });
+
+        if (timestamp) {
+          const time = document.createElement("span");
+          time.className = "timestamp";
+          time.textContent = timestamp;
+          content.appendChild(time);
+        }
+
         return element;
       }
 
-      function appendMessage(role, text, intent) {
-        const message = createMessageElement(role, text, intent);
+      function appendMessage(role, text, intent = null, options = {}) {
+        const timestamp = options.timestamp ?? formatTimestamp(new Date());
+        const message = createMessageElement(role, text, intent, timestamp);
         transcript.appendChild(message);
         transcript.scrollTop = transcript.scrollHeight;
+        return message;
       }
 
       function renderSuggestions(suggestions) {
@@ -425,6 +492,37 @@
         transcript.scrollTop = transcript.scrollHeight;
       }
 
+      function showTypingIndicator() {
+        if (typingIndicator) {
+          return;
+        }
+        typingIndicator = document.createElement("div");
+        typingIndicator.className = "typing-indicator";
+        typingIndicator.setAttribute("aria-live", "polite");
+        typingIndicator.innerHTML = '<span></span><span></span><span></span>';
+        const wrapper = document.createElement("div");
+        wrapper.className = "message assistant";
+        wrapper.appendChild(typingIndicator);
+        transcript.appendChild(wrapper);
+        transcript.scrollTop = transcript.scrollHeight;
+      }
+
+      function hideTypingIndicator() {
+        if (!typingIndicator) {
+          return;
+        }
+        const container = typingIndicator.closest(".message");
+        if (container) {
+          container.remove();
+        }
+        typingIndicator = null;
+      }
+
+      function setComposerDisabled(disabled) {
+        messageInput.disabled = disabled;
+        sendButton.disabled = disabled;
+      }
+
       async function sendMessage(text) {
         if (!text || !text.trim() || isSending) {
           return;
@@ -434,8 +532,10 @@
         messageInput.value = "";
         renderSuggestions([]);
         isSending = true;
-        statusLabel.textContent = "Thinking...";
+        statusLabel.textContent = "Assistant is typing...";
         statusLabel.classList.remove("hidden");
+        setComposerDisabled(true);
+        showTypingIndicator();
 
         try {
           const response = await fetch("/chat", {
@@ -451,11 +551,13 @@
           }
 
           const payload = await response.json();
+          hideTypingIndicator();
           appendMessage("assistant", payload.response.text, payload.intent);
           renderSuggestions(payload.response.suggestions);
           renderForm(payload.response.form);
           statusLabel.textContent = `Intent: ${payload.intent} (confidence ${payload.confidence.toFixed(2)})`;
         } catch (error) {
+          hideTypingIndicator();
           appendMessage(
             "assistant",
             "I couldn't reach the support service just now. Please try again or refresh the page.",
@@ -465,6 +567,8 @@
           console.error(error);
         } finally {
           isSending = false;
+          setComposerDisabled(false);
+          messageInput.focus();
         }
       }
 
@@ -476,17 +580,43 @@
         }
       });
 
-      // Kick off greeting
-      appendMessage(
-        "assistant",
-        "Hi there! I'm your Customer Care Assistant. Ask me about billing, live events, or account access to get started.",
-        "greeting"
-      );
-      renderSuggestions([
-        "Billing question",
-        "Trouble logging in",
-        "How to watch live events",
-      ]);
+      async function bootstrap() {
+        appendMessage(
+          "assistant",
+          "Hi there! I'm your Customer Care Assistant. Ask me about billing, live events, or account access to get started.",
+          "greeting",
+          { timestamp: formatTimestamp(new Date()) }
+        );
+        renderSuggestions([
+          "Billing question",
+          "Trouble logging in",
+          "How to watch live events",
+        ]);
+
+        try {
+          const response = await fetch(`/sessions/${sessionId}`);
+          if (!response.ok) {
+            throw new Error("Unable to load previous conversation");
+          }
+          const data = await response.json();
+          if (Array.isArray(data.history) && data.history.length > 0) {
+            transcript.innerHTML = "";
+            data.history.forEach((entry) => {
+              const role = entry.role === "assistant" ? "assistant" : "user";
+              appendMessage(role, entry.text, entry.intent || null, {
+                timestamp: formatTimestamp(new Date()),
+              });
+            });
+          }
+          statusLabel.textContent = "Ready to help.";
+        } catch (error) {
+          statusLabel.textContent = "Ready to help (offline history unavailable).";
+          console.warn(error);
+        }
+        messageInput.focus();
+      }
+
+      bootstrap();
     </script>
   </body>
 </html>

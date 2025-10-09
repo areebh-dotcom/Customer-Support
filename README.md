@@ -32,8 +32,9 @@ This repository houses the source code and planning artifacts for a customer sup
    make run
    ```
    Once running, visit the fully featured web chat at [http://127.0.0.1:8000/](http://127.0.0.1:8000/) for a guided UI that mirrors
-   the reference designs. The interactive API docs remain available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) if you
-   prefer to exercise the endpoints directly.
+   the reference designs. The browser client offers quick-reply chips, dynamic billing forms, typing indicators, and automatic
+   transcript recovery so you can watch the experience update in real time. The interactive API docs remain available at
+   [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) if you prefer to exercise the endpoints directly.
 4. **Interact with the chatbot**:
    - Send REST requests to `POST /chat` with JSON `{ "session_id": "demo", "message": "I have a billing issue" }`. Each response now echoes the running conversation history so you can render transcripts on the client side.
    - Retrieve the active session memory and transcript with `GET /sessions/{session_id}` or reset it via `POST /sessions/{session_id}/reset`.
